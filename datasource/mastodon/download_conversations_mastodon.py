@@ -1,22 +1,30 @@
 import logging
-from delab.corpus.DelabTreeDAO import persist_tree, set_up_topic_and_simple_request, check_general_tree_requirements
-from delab_trees.delab_tree import DelabTree
-from delab.tw_connection_util import create_mastodon
-from bs4 import BeautifulSoup
-from delab.delab_enums import PLATFORM, LANGUAGE
-import pandas as pd
 import signal
-from datasource.mastodon import MastodonNetworkError
+
+import pandas as pd
+from bs4 import BeautifulSoup
+from mastodon import MastodonNetworkError
+
+from DelabTreeDAO import check_general_tree_requirements
+from connection_util import create_mastodon
+from delab_trees.delab_tree import DelabTree
+from models.language import LANGUAGE
+from models.platform import PLATFORM
 
 logger = logging.getLogger(__name__)
 
 
-def download_conversations_mstd(query, topic, since=None):
-    mastodon = create_mastodon()
-    download_conversations_to_search(query=query, mastodon=mastodon, topic=topic, since=since)
+def download_conversations_mstd(query, since=None, client_id=None,
+                                client_secret=None,
+                                access_token=None,
+                                api_base_url="https://mastodon.social/",
+                                use_yaml=False,
+                                yaml_path=None):
+    mastodon = create_mastodon(client_id, client_secret, access_token, api_base_url, use_yaml, yaml_path)
+    download_conversations_to_search(query=query, mastodon=mastodon, since=since)
 
 
-def download_conversations_to_search(query, mastodon, topic, since, daily_sample=False):
+def download_conversations_to_search(query, mastodon, since):
     statuses = download_timeline(query=query, mastodon=mastodon, since=since)
     contexts = []
     trees = []
@@ -35,8 +43,7 @@ def download_conversations_to_search(query, mastodon, topic, since, daily_sample
         tree = toots_to_tree(context=context, conversation_id=conversation_id)
         if tree is not None:
             trees.append(tree)
-            if not daily_sample:
-                save_tree_to_db(tree=tree, topic=topic, query=query)
+
     return trees
 
 
@@ -180,11 +187,6 @@ def pre_process_df(context_df):
         assert context_df["parent_id"].dtype == "object" and context_df[
             "post_id"].dtype == "object", "post_id and parent_id need to be both float or str"
     return context_df
-
-
-def save_tree_to_db(tree, topic, query):
-    simple_request, tw_topic = set_up_topic_and_simple_request(query_string=query, request_id=-1, topic_string=topic)
-    persist_tree(tree=tree, platform=PLATFORM.MASTODON, simple_request=simple_request, topic=tw_topic)
 
 
 def content_to_text(content):

@@ -5,11 +5,8 @@ from copy import deepcopy
 from datetime import datetime
 from random import choice
 from time import sleep
-from delab.corpus.DelabTreeDAO import check_general_tree_requirements
-from delab.corpus.download_exceptions import NoDailySubredditAvailableException
-from delab.corpus.reddit.download_conversations_reddit import compute_reddit_tree
-from delab.delab_enums import LANGUAGE
-from delab.tw_connection_util import get_praw
+
+from connection_util import get_praw
 from delab_trees.delab_tree import DelabTree
 
 logger = logging.getLogger(__name__)

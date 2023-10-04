@@ -55,7 +55,7 @@ class DelabTwarc(Twarc2):
         super().__init__(consumer_key, consumer_secret, access_token, access_token_secret, bearer_token)
 
 
-def get_praw(reddit_secret, reddit_script_id, reddit_user, reddit_password, user_agent, use_yaml=False, yaml_path=None):
+def get_praw(reddit_secret=None, reddit_script_id=None, reddit_user=None, reddit_password=None, user_agent=None, use_yaml=False, yaml_path=None):
     if use_yaml:
         user_agent = "django_script:de.uni-goettingen.delab:v0.0.1 (by u/CalmAsTheSea)"
         reddit_secret, reddit_script_id, reddit_user, reddit_password = TwitterUtil.get_reddit_secret(yaml_path)
@@ -90,3 +90,4 @@ def create_mastodon(client_id=None,
                         api_base_url=api_base_url
                         )
     return mastodon
+

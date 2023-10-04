@@ -1,11 +1,12 @@
 import logging
 from copy import deepcopy
 from random import choice
-from delab.corpus.download_exceptions import NoDailyMTHashtagsAvailableException
-from delab.corpus.mastodon.download_conversations_mastodon import download_conversations_to_search
-from delab.tw_connection_util import create_mastodon
 from datetime import datetime, timedelta
-from delab.delab_enums import LANGUAGE
+
+from connection_util import create_mastodon
+from datasource.mastodon.download_conversations_mastodon import download_conversations_to_search
+from download_exceptions import NoDailyMTHashtagsAvailableException
+from models.language import LANGUAGE
 
 logger = logging.getLogger(__name__)
 
@@ -241,15 +242,25 @@ class MTSampler:
         self.language = language
         self.current_date = current_date
 
-    def download_daily_political_sample_mstd(self, topic_string):
+    def download_daily_political_sample_mstd(self, topic_string, client_id=None,
+                                             client_secret=None,
+                                             access_token=None,
+                                             api_base_url="https://mastodon.social/",
+                                             use_yaml=False,
+                                             yaml_path=None):
         hashtag = self.hashtag_string
         # toots in the last 24 hours
         today = datetime.now()
         yesterday = today - timedelta(days=1)
-        mastodon = create_mastodon()
-        #logger.debug("searching for conversations for hashtag {}".format(self.hashtag_string))
-        downloaded_trees = download_conversations_to_search(query=hashtag, mastodon=mastodon, topic=topic_string,
-                                                            since=yesterday, daily_sample=True)
+        mastodon = create_mastodon(client_id,
+                                   client_secret,
+                                   access_token,
+                                   api_base_url,
+                                   use_yaml,
+                                   yaml_path)
+        # logger.debug("searching for conversations for hashtag {}".format(self.hashtag_string))
+        downloaded_trees = download_conversations_to_search(query=hashtag, mastodon=mastodon,
+                                                            since=yesterday)
 
         logger.debug("returning {} conversations for hashtags {}, {} hashtags not searched for lang {}"
                      .format(len(downloaded_trees), self.hashtag_string,
