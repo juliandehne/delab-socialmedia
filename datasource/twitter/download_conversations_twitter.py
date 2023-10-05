@@ -4,20 +4,19 @@ import time
 
 from requests import HTTPError
 
-from delab.corpus.DelabTreeDAO import set_up_topic_and_simple_request
-from delab.corpus.download_exceptions import ConversationNotInRangeException
-from delab.corpus.filter_conversation_trees import solve_orphans
-from delab.delab_enums import PLATFORM, LANGUAGE, TWEET_RELATIONSHIPS
-from delab.models import TwTopic, SimpleRequest
-from delab.tw_connection_util import DelabTwarc
+from api_settings import MAX_CONVERSATION_LENGTH, MIN_CONVERSATION_LENGTH, MAX_CANDIDATES
+from connection_util import DelabTwarc
 from delab_trees.recursive_tree.recursive_tree import TreeNode
-from django_project.settings import MAX_CANDIDATES, MAX_CONVERSATION_LENGTH, MIN_CONVERSATION_LENGTH
+from delab_trees.recursive_tree.recursive_tree_util import solve_orphans
+from download_exceptions import ConversationNotInRangeException
+from models.language import LANGUAGE
+from models.platform import PLATFORM
 from util.abusing_lists import powerset
 
 logger = logging.getLogger(__name__)
 
 
-def download_conversations_tw(topic_string, query_string, request_id=-1, language=LANGUAGE.ENGLISH, max_data=False,
+def download_conversations_tw(query_string, language=LANGUAGE.ENGLISH, max_data=False,
                               conversation_filter=None, tweet_filter=None, platform=PLATFORM.TWITTER,
                               recent=True,
                               max_conversation_length=MAX_CONVERSATION_LENGTH,
@@ -44,8 +43,6 @@ def download_conversations_tw(topic_string, query_string, request_id=-1, languag
     if query_string is None or query_string.strip() == "":
         return False
 
-    simple_request, topic = set_up_topic_and_simple_request(query_string, request_id, topic_string)
-
     twarc = DelabTwarc()
 
     # download the conversations
@@ -60,33 +57,31 @@ def download_conversations_tw(topic_string, query_string, request_id=-1, languag
             if len(hashtag_set) > 0:
                 combination_counter += 1
                 new_query = " ".join(hashtag_set)
-                filter_conversations(twarc, new_query, topic, simple_request, platform, language=language,
+                filter_conversations(twarc, new_query, platform, language=language,
                                      conversation_filter=conversation_filter,
                                      tweet_filter=tweet_filter, recent=recent,
                                      max_conversation_length=max_conversation_length,
                                      min_conversation_length=min_conversation_length,
-                                     max_number_of_candidates=max_number_of_candidates, persist=persist)
+                                     max_number_of_candidates=max_number_of_candidates)
                 logger.debug("FINISHED combination {}/{}".format(combination_counter, combinations_l))
     else:
         # in case max_data is false we don't compute the powerset of the hashtags
-        filter_conversations(twarc, query_string, topic, simple_request, platform, language=language,
+        filter_conversations(twarc, query_string, platform, language=language,
                              conversation_filter=conversation_filter,
                              tweet_filter=tweet_filter, recent=recent, max_conversation_length=max_conversation_length,
                              min_conversation_length=min_conversation_length,
-                             max_number_of_candidates=max_number_of_candidates, persist=persist)
+                             max_number_of_candidates=max_number_of_candidates)
 
 
 def filter_conversations(twarc,
                          query,
-                         topic,
-                         simple_request,
                          platform,
                          max_conversation_length=MAX_CONVERSATION_LENGTH,
                          min_conversation_length=MIN_CONVERSATION_LENGTH,
                          language=LANGUAGE.ENGLISH,
                          max_number_of_candidates=MAX_CANDIDATES,
                          conversation_filter=None,
-                         tweet_filter=None, recent=True, persist=True):
+                         tweet_filter=None, recent=True):
     """
     @param persist:
     @see download_conversations_tw
@@ -111,6 +106,7 @@ def filter_conversations(twarc,
     downloaded_tweets = 0
     n_dismissed_candidates = 0
 
+    result = []
     # iterate through the candidates
     for candidate in candidates:
         try:
@@ -138,9 +134,7 @@ def filter_conversations(twarc,
                     logger.debug("found tree with depth: {}".format(root_node.compute_max_path_length()))
                     downloaded_tweets += flat_tree_size
                     if min_conversation_length < flat_tree_size < max_conversation_length:
-                        save_tree_to_db(root_node, topic, simple_request, conversation_id, platform,
-                                        candidate_id=int(candidate["id"]),
-                                        tweet_filter=tweet_filter)
+                        result.append(root_node)
                         logger.debug("found suitable conversation and saved to db {}".format(conversation_id))
                         # for debugging you can ascii art print the downloaded conversation_tree
                         # root_node.print_tree(0)
@@ -300,22 +294,7 @@ def get_priority_parent_from_references(references):
     raise Exception("no parent found")
 
 
-def save_tree_to_db(root_node: TreeNode,
-                    topic: TwTopic,
-                    simple_request: SimpleRequest,
-                    conversation_id: int,
-                    platform: PLATFORM, candidate_id=None,
-                    tweet_filter=None):
-    """ This method persist a conversation tree in the database
-        Parameters
-        ----------
-        :param root_node : TwConversationTree
-        :param topic : the topic of the query
-        :param simple_request: the query string in order to link the view
-        :param conversation_id: the conversation id of the candidate tweet that was found with the request
-        :param platform: this was added to allow for a "fake" delab platform to come in
-        :param tweet_filter: a function that takes a tweet model object and validates it (returns None if not)
-        :param candidate_id
-    """
-    # TODO run some tree validations
-    store_tree_data(conversation_id, platform, root_node, simple_request, topic, candidate_id, tweet_filter)
+class TWEET_RELATIONSHIPS:
+    REPLIED_TO = "replied_to",
+    QUOTED = "quoted",
+    RETWEETED = "retweeted"

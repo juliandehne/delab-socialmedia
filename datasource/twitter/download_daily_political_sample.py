@@ -2,13 +2,13 @@ import logging
 from datetime import datetime, timedelta
 from random import choice
 
-from delab.corpus.download_exceptions import ConversationNotInRangeException
-from delab.corpus.sample_political_keywords import topics, search_phrases
-from delab.corpus.twitter.download_conversations_twitter import download_conversation_representative_tweets, \
+from connection_util import DelabTwarc
+from datasource.twitter.download_conversations_twitter import download_conversation_representative_tweets, \
     download_conversation_as_tree
-from delab.delab_enums import LANGUAGE
-from delab.tw_connection_util import DelabTwarc
 from delab_trees.delab_tree import DelabTree
+from download_exceptions import ConversationNotInRangeException
+from models.language import LANGUAGE
+from sample_political_keywords import topics, search_phrases
 
 logger = logging.getLogger(__name__)
 
