@@ -5,6 +5,7 @@ import prawcore
 import pytz
 
 from api_settings import MAX_CANDIDATES_REDDIT
+from connection_util import get_praw
 from delab_trees import TreeNode
 from delab_trees.recursive_tree.recursive_tree_util import solve_orphans
 from models.language import LANGUAGE
@@ -24,15 +25,22 @@ for message in reddit.subreddit("mod").mod.inbox(limit=5):
 logger = logging.getLogger(__name__)
 
 
-def search_r_all(reddit, sub_reddit_string: str, recent=True,
+def search_r_all(reddit, query: str, recent=True,
                  language=LANGUAGE.ENGLISH):
+    """
+    searches for query in reddit all
+    :param query:
+    :param recent:
+    :param language:
+    :return:
+    """
     try:
         if recent:
-            for submission in reddit.subreddit("all").search(query=sub_reddit_string, limit=MAX_CANDIDATES_REDDIT,
+            for submission in reddit.subreddit("all").search(query=query, limit=MAX_CANDIDATES_REDDIT,
                                                              sort="new"):
                 return compute_reddit_tree(submission, language)
         else:
-            for submission in reddit.subreddit("all").search(query=sub_reddit_string, limit=MAX_CANDIDATES_REDDIT):
+            for submission in reddit.subreddit("all").search(query=query, limit=MAX_CANDIDATES_REDDIT):
                 return compute_reddit_tree(submission, language)
 
     except prawcore.exceptions.Redirect:

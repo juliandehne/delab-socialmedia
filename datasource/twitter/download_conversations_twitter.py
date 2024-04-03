@@ -1,107 +1,62 @@
 import logging
-import re
 import time
 
 from requests import HTTPError
 
 from api_settings import MAX_CONVERSATION_LENGTH, MIN_CONVERSATION_LENGTH, MAX_CANDIDATES
-from connection_util import DelabTwarc
 from delab_trees.recursive_tree.recursive_tree import TreeNode
 from delab_trees.recursive_tree.recursive_tree_util import solve_orphans
 from download_exceptions import ConversationNotInRangeException
 from models.language import LANGUAGE
 from models.platform import PLATFORM
-from util.abusing_lists import powerset
 
 logger = logging.getLogger(__name__)
 
 
-def download_conversations_tw(query_string, language=LANGUAGE.ENGLISH, max_data=False,
-                              conversation_filter=None, tweet_filter=None, platform=PLATFORM.TWITTER,
+def download_conversations_tw(twarc, query_string, language=LANGUAGE.ENGLISH,
+                              platform=PLATFORM.TWITTER,
                               recent=True,
-                              max_conversation_length=MAX_CONVERSATION_LENGTH,
                               min_conversation_length=MIN_CONVERSATION_LENGTH,
-                              max_number_of_candidates=MAX_CANDIDATES, persist=True):
+                              max_number_of_candidates=MAX_CANDIDATES):
     """
-     @param persist: store the downloaded trees in db
      @param recent: use the recent api from twitter which is faster and more current
-     @param conversation_filter: this takes on a partial function that rejects a TWConversationTree based on some criteria
-                                 before saving it
-     @param tweet_filter: this takes on a partial function that takes on a tweet, storing it and doing some additional task
-                         before returning the now persistent tweet
      @param platform: reddit or twitter
-     @param max_data: if it is set to true, the powerset (all combinations) of the query words is computed
      @param language: en, de or others
-     @param request_id: if > 0 this is the reference to the SimpleRequest table that is filled when using the website
      @param query_string: the query used to find tweets in twitter
-     @param topic_string: the title of the the topic as string
      @param max_number_of_candidates: the number of tweets used as candidates for a conversation
      @param min_conversation_length: this restricts conversations with too few posts,
             it should be noted that this is no flow analysis
-     @param max_conversation_length: this restricts conversations with too many posts
      """
     if query_string is None or query_string.strip() == "":
         return False
 
-    twarc = DelabTwarc()
-
-    # download the conversations
-    if max_data:
-        # this computes the powerset of the queried words
-        pattern = r'[\(\)\[\]]'
-        bag_of_words = re.sub(pattern, '', query_string).split(" ")
-        combinations = list(powerset(bag_of_words))
-        combinations_l = len(combinations) - 1
-        combination_counter = 0
-        for hashtag_set in combinations:
-            if len(hashtag_set) > 0:
-                combination_counter += 1
-                new_query = " ".join(hashtag_set)
-                filter_conversations(twarc, new_query, platform, language=language,
-                                     conversation_filter=conversation_filter,
-                                     tweet_filter=tweet_filter, recent=recent,
-                                     max_conversation_length=max_conversation_length,
-                                     min_conversation_length=min_conversation_length,
-                                     max_number_of_candidates=max_number_of_candidates)
-                logger.debug("FINISHED combination {}/{}".format(combination_counter, combinations_l))
-    else:
-        # in case max_data is false we don't compute the powerset of the hashtags
-        filter_conversations(twarc, query_string, platform, language=language,
-                             conversation_filter=conversation_filter,
-                             tweet_filter=tweet_filter, recent=recent, max_conversation_length=max_conversation_length,
-                             min_conversation_length=min_conversation_length,
-                             max_number_of_candidates=max_number_of_candidates)
+    # in case max_data is false we don't compute the powerset of the hashtags
+    filter_conversations(twarc, query_string, platform, language=language, recent=recent,
+                         min_conversation_length=min_conversation_length,
+                         max_number_of_candidates=max_number_of_candidates)
 
 
 def filter_conversations(twarc,
                          query,
-                         platform,
                          max_conversation_length=MAX_CONVERSATION_LENGTH,
                          min_conversation_length=MIN_CONVERSATION_LENGTH,
                          language=LANGUAGE.ENGLISH,
-                         max_number_of_candidates=MAX_CANDIDATES,
-                         conversation_filter=None,
-                         tweet_filter=None, recent=True):
+                         max_number_of_candidates=MAX_CANDIDATES, recent=True):
     """
-    @param persist:
     @see download_conversations_tw
     @param twarc:
     @param query:
-    @param topic:
-    @param simple_request:
-    @param platform:
     @param max_conversation_length:
     @param min_conversation_length:
     @param language:
     @param max_number_of_candidates:
-    @param conversation_filter:
-    @param tweet_filter:
     @param recent:
     @return:
     """
 
     # download the tweets that fulfill the query as candidates for whole conversation trees
-    candidates, n_pages = download_conversation_representative_tweets(twarc, query, max_number_of_candidates, language,
+    candidates, n_pages = download_conversation_representative_tweets(twarc, query, max_number_of_candidates,
+                                                                      language,
                                                                       recent=recent)
     downloaded_tweets = 0
     n_dismissed_candidates = 0
@@ -118,10 +73,6 @@ def filter_conversations(twarc,
 
                 # download the other tweets from the conversation as a TWConversationTree
                 root_node = download_conversation_as_tree(twarc, conversation_id, max_conversation_length)
-
-                # apply the conversation filter
-                if conversation_filter is not None:
-                    root_node = conversation_filter(root_node)
 
                 # skip the processing if there was a problem with constructing the conversation tree
                 if root_node is None:

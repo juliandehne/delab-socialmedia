@@ -14,17 +14,11 @@ from models.platform import PLATFORM
 logger = logging.getLogger(__name__)
 
 
-def download_conversations_mstd(query, since=None, client_id=None,
-                                client_secret=None,
-                                access_token=None,
-                                api_base_url="https://mastodon.social/",
-                                use_yaml=False,
-                                yaml_path=None):
-    mastodon = create_mastodon(client_id, client_secret, access_token, api_base_url, use_yaml, yaml_path)
-    download_conversations_to_search(query=query, mastodon=mastodon, since=since)
+def download_conversations_mstd(mastodon, query, since=None, max_conversations=5):
+    download_conversations_to_search(query=query, mastodon=mastodon, since=since, max_conversations=max_conversations)
 
 
-def download_conversations_to_search(query, mastodon, since):
+def download_conversations_to_search(query, mastodon, since, max_conversations=5):
     statuses = download_timeline(query=query, mastodon=mastodon, since=since)
     contexts = []
     trees = []
@@ -43,6 +37,8 @@ def download_conversations_to_search(query, mastodon, since):
         tree = toots_to_tree(context=context, conversation_id=conversation_id)
         if tree is not None:
             trees.append(tree)
+        if len(trees) >= max_conversations:
+            break
 
     return trees
 
