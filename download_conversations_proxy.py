@@ -3,12 +3,10 @@ import logging
 from api_settings import MT_STUDY_DAILY_FLOWS_NEEDED
 from datasource.mastodon.download_conversations_mastodon import download_conversations_mstd
 from datasource.mastodon.download_daily_political_sample_mstd import MTSampler
-from datasource.reddit.download_conversations_reddit import search_r_all, download_conversations_by_id
+from datasource.reddit.download_conversations_reddit import search_r_all
 from datasource.reddit.download_daily_political_rd_sample import RD_Sampler
-from datasource.reddit.download_timelines_reddit import download_timelines_reddit
 from datasource.twitter.download_conversations_twitter import download_conversations_tw
 from datasource.twitter.download_daily_political_sample import download_daily_political_sample
-from datasource.twitter.download_timelines_twitter import update_timelines_twitter
 from delab_trees.delab_tree import DelabTree
 from models.language import LANGUAGE
 from models.platform import PLATFORM
@@ -61,13 +59,6 @@ def download_conversations(topic_string, query_string, request_id=-1, language=L
         download_conversations_mstd(query=query_string, topic=topic_string)
 
 
-def download_timelines(simple_request_id, platform: PLATFORM):
-    if platform == PLATFORM.TWITTER:
-        update_timelines_twitter(simple_request_id)
-    if platform == PLATFORM.REDDIT:
-        download_timelines_reddit(simple_request_id)
-
-
 def download_daily_sample(topic_string,
                           platform: PLATFORM,
                           language=LANGUAGE.ENGLISH,
@@ -88,12 +79,5 @@ def download_daily_sample(topic_string,
     if platform == platform.MASTODON:
         sampler = MTSampler(language=language)
         return sampler.download_daily_political_sample_mstd(topic_string)
-    else:
-        raise NotImplementedError()
-
-
-def update_conversations(conversation_ids: list[int], platform: PLATFORM):
-    if platform == PLATFORM.REDDIT:
-        download_conversations_by_id(conversation_ids)
     else:
         raise NotImplementedError()

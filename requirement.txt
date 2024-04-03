@@ -1,1 +1,4 @@
 delab_trees
+pytest==7.1.2
+attrs
+

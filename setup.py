@@ -16,7 +16,7 @@ with open(path.join(HERE, 'README.md'), encoding='utf-8') as f:
 setup(
     name="delab-socialmedia",
     version="0.3.6",
-    description="a library to analyse reply trees in forums and social media",
+    description="a library to download reply trees in forums and social media",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/juliandehne/delab-trees",
@@ -31,5 +31,5 @@ setup(
     ],
     packages=find_packages(),
     include_package_data=True,
-    install_requires=["delab_trees", "Mastodon.py", "twarc==2.8.0", "PyYAML"]
+    install_requires=["delab_trees", "Mastodon.py", "twarc==2.8.0", "PyYAML", "pytest==7.1.2", "attrs"]
 )
