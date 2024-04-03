@@ -14,10 +14,13 @@ from models.platform import PLATFORM
 logger = logging.getLogger(__name__)
 
 
-def download_conversations(connector, query_string="Politik",
-                           language=LANGUAGE.ENGLISH,
+def download_conversations(query_string="Politik",
                            platform=PLATFORM.TWITTER,
-                           recent=True, max_conversations=5):
+                           language=LANGUAGE.ENGLISH,
+                           recent=True,
+                           max_conversations=5,
+                           connector=None
+                           ):
     """
     This is a proxy to download conversations from twitter, reddit respectively with the same interface
     :param connector: connector object, twarc for Twitter, praw for reddit and mastodon for Mastodon, see README for examples
@@ -34,9 +37,9 @@ def download_conversations(connector, query_string="Politik",
                                   language=language, platform=platform,
                                   recent=recent)
     elif platform == PLATFORM.REDDIT:
-        search_r_all(connector, query_string, recent=recent, language=language)
+        search_r_all(query_string, max_conversations=max_conversations, recent=recent, language=language, reddit=connector)
     elif platform == PLATFORM.MASTODON:
-        download_conversations_mstd(connector, query=query_string, max_conversations=max_conversations)
+        download_conversations_mstd(query=query_string, max_conversations=max_conversations, mastodon=connector)
 
 
 def download_daily_sample(topic_string,

@@ -7,6 +7,7 @@ import pytz
 from api_settings import MAX_CANDIDATES_REDDIT
 from connection_util import get_praw
 from delab_trees import TreeNode
+from delab_trees.delab_tree import DelabTree
 from delab_trees.recursive_tree.recursive_tree_util import solve_orphans
 from models.language import LANGUAGE
 from util.abusing_strings import convert_to_hash
@@ -25,32 +26,48 @@ for message in reddit.subreddit("mod").mod.inbox(limit=5):
 logger = logging.getLogger(__name__)
 
 
-def search_r_all(reddit, query: str, recent=True,
+def search_r_all(query: str, max_conversations=5, reddit=None, recent=True,
                  language=LANGUAGE.ENGLISH):
     """
     searches for query in reddit all
+    :param max_conversations:
+    :param reddit:
     :param query:
     :param recent:
     :param language:
     :return:
     """
+    trees = []
+    if reddit is None:
+        reddit = get_praw()
     try:
         if recent:
             for submission in reddit.subreddit("all").search(query=query, limit=MAX_CANDIDATES_REDDIT,
                                                              sort="new"):
-                return compute_reddit_tree(submission, language)
+                result_tree = compute_reddit_tree(submission, language)
+                trees.append(result_tree)
+                if len(trees) >= max_conversations:
+                    break
         else:
             for submission in reddit.subreddit("all").search(query=query, limit=MAX_CANDIDATES_REDDIT):
-                return compute_reddit_tree(submission, language)
-
+                result_tree = compute_reddit_tree(submission, language)
+                trees.append(result_tree)
+                if len(trees) >= max_conversations:
+                    break
     except prawcore.exceptions.Redirect:
         logger.error("reddit with this name does not exist")
+
+    result = [DelabTree.from_recursive_tree(x) for x in trees]
+    return result
 
 
 def download_subreddit(reddit, sub_reddit_string, language=LANGUAGE.ENGLISH,
                        hot=False):
     logger.debug("saving subreddit {}".format(sub_reddit_string))
 
+    if reddit is None:
+        reddit = get_praw()
+    trees = []
     try:
         if not hot:
             count = 0
@@ -58,16 +75,18 @@ def download_subreddit(reddit, sub_reddit_string, language=LANGUAGE.ENGLISH,
                 try:
                     count += 1
                     logger.debug("saving subreddit {}, submission {}".format(sub_reddit_string, count))
-                    return compute_reddit_tree(submission, language)
+                    trees.append(compute_reddit_tree(submission, language))
                 except prawcore.exceptions.TooManyRequests:
                     time.sleep(600)
         else:
             for submission in reddit.subreddit(sub_reddit_string).hot(limit=10):
-                return compute_reddit_tree(submission, language)
+                trees.append(compute_reddit_tree(submission, language))
     except prawcore.exceptions.Redirect:
         logger.error("reddit with this name does not exist{}".format(sub_reddit_string))
     except prawcore.exceptions.Forbidden:
         logger.error("reddit with this name could not be accessed {}".format(sub_reddit_string))
+    result = [DelabTree.from_recursive_tree(x) for x in trees]
+    return result
 
 
 def compute_reddit_tree(submission, language):

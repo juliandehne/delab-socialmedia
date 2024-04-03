@@ -14,7 +14,10 @@ from models.platform import PLATFORM
 logger = logging.getLogger(__name__)
 
 
-def download_conversations_mstd(mastodon, query, since=None, max_conversations=5):
+def download_conversations_mstd(query, mastodon=None, since=None, max_conversations=5):
+    if mastodon is None:
+        mastodon = create_mastodon()
+
     download_conversations_to_search(query=query, mastodon=mastodon, since=since, max_conversations=max_conversations)
 
 

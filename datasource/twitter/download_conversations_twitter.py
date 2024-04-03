@@ -4,6 +4,7 @@ import time
 from requests import HTTPError
 
 from api_settings import MAX_CONVERSATION_LENGTH, MIN_CONVERSATION_LENGTH, MAX_CANDIDATES
+from connection_util import DelabTwarc
 from delab_trees.recursive_tree.recursive_tree import TreeNode
 from delab_trees.recursive_tree.recursive_tree_util import solve_orphans
 from download_exceptions import ConversationNotInRangeException
@@ -27,6 +28,9 @@ def download_conversations_tw(twarc, query_string, language=LANGUAGE.ENGLISH,
      @param min_conversation_length: this restricts conversations with too few posts,
             it should be noted that this is no flow analysis
      """
+    if twarc is None:
+        twarc = DelabTwarc()
+
     if query_string is None or query_string.strip() == "":
         return False
 
