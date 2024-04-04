@@ -3,7 +3,7 @@ import logging
 import mastodon
 from mastodon import MastodonServiceUnavailableError
 
-from daily_sampler import download_samples
+from daily_sampler import download_samples, check_general_tree_requirements
 from datasource.mastodon.download_conversations_mastodon import download_conversations_mstd
 from datasource.mastodon.download_daily_political_sample_mstd import MTSampler
 from datasource.reddit.download_conversations_reddit import search_r_all
@@ -17,10 +17,10 @@ logger = logging.getLogger(__name__)
 
 
 def download_conversations(query_string="Politik",
-                           platform=PLATFORM.TWITTER,
+                           platform=PLATFORM.REDDIT,
                            language=LANGUAGE.ENGLISH,
                            recent=True,
-                           max_conversations=5,
+                           max_conversations=30,
                            connector=None
                            ):
     """
@@ -33,21 +33,27 @@ def download_conversations(query_string="Politik",
     :param max_conversations: max number of conversations. Cuts of querying before checking tree requirements!
     :return:
     """
+    result = []
 
     if platform == PLATFORM.TWITTER:
-        return download_conversations_tw(connector,
-                                         query_string=query_string,
-                                         language=language,
-                                         platform=platform,
-                                         recent=recent)
+        result = download_conversations_tw(connector,
+                                           query_string=query_string,
+                                           language=language,
+                                           platform=platform,
+                                           recent=recent)
     elif platform == PLATFORM.REDDIT:
-        return search_r_all(query_string,
-                            max_conversations=max_conversations,
-                            recent=recent,
-                            language=language,
-                            reddit=connector)
+        result = search_r_all(query_string,
+                              max_conversations=max_conversations,
+                              recent=recent,
+                              language=language,
+                              reddit=connector)
     elif platform == PLATFORM.MASTODON:
-        return download_conversations_mstd(query=query_string, max_conversations=max_conversations, mastodon=connector)
+        result = download_conversations_mstd(query=query_string, max_conversations=max_conversations,
+                                             mastodon=connector)
+
+    result_filtered = [x for x in result if x.total_number_of_posts() > 2 and x.validate(verbose=False)]
+
+    return result_filtered
 
 
 def download_daily_sample_conversations(platform, min_results, language, connector=None):

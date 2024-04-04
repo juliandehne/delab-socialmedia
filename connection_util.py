@@ -27,22 +27,22 @@ class ConnectionUtil:
         return access_token, access_token_secret, bearer_token, consumer_key, consumer_secret
 
     @staticmethod
-    def get_reddit_secret(yaml_path):
+    def get_reddit_secret(yaml_path, use_yaml):
         reddit_secret = os.environ.get("reddit_secret")
         reddit_script_id = os.environ.get("reddit_script_id")
         reddit_user = os.environ.get("reddit_user_name")
         reddit_password = os.environ.get("reddit_password")
-
-        with open(yaml_path) as f:
-            my_dict = yaml.safe_load(f)
-            if reddit_secret != "":
-                reddit_secret = my_dict.get("reddit_secret")
-            if reddit_script_id != "":
-                reddit_script_id = my_dict.get("reddit_script_id")
-            if reddit_user != "":
-                reddit_user = my_dict.get("reddit_user_name")
-            if reddit_password != "":
-                reddit_password = my_dict.get("reddit_password")
+        if use_yaml:
+            with open(yaml_path) as f:
+                my_dict = yaml.safe_load(f)
+                if reddit_secret != "":
+                    reddit_secret = my_dict.get("reddit_secret")
+                if reddit_script_id != "":
+                    reddit_script_id = my_dict.get("reddit_script_id")
+                if reddit_user != "":
+                    reddit_user = my_dict.get("reddit_user_name")
+                if reddit_password != "":
+                    reddit_password = my_dict.get("reddit_password")
         return reddit_secret, reddit_script_id, reddit_user, reddit_password
 
     @staticmethod
@@ -85,9 +85,11 @@ def get_praw(reddit_secret=None, reddit_script_id=None, reddit_user=None, reddit
     :param yaml_path:
     :return:
     """
-    if use_yaml:
-        user_agent = "django_script:de.uni-goettingen.delab:v0.0.1 (by u/CalmAsTheSea)"
-        reddit_secret, reddit_script_id, reddit_user, reddit_password = ConnectionUtil.get_reddit_secret(yaml_path)
+
+    user_agent = "django_script:de.uni-goettingen.delab:v0.0.1 (by u/CalmAsTheSea)"
+    reddit_secret, reddit_script_id, reddit_user, reddit_password = ConnectionUtil.get_reddit_secret(
+        yaml_path=yaml_path, use_yaml=use_yaml)
+
     reddit = praw.Reddit(client_id=reddit_script_id,
                          client_secret=reddit_secret,
                          user_agent=user_agent,
