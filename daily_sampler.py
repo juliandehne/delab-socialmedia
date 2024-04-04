@@ -1,7 +1,6 @@
 import logging
 
-from DelabTreeDAO import check_general_tree_requirements
-from api_settings import MT_STUDY_DAILY_FLOWS_NEEDED
+from api_settings import *
 from datasource.mastodon.download_daily_political_sample_mstd import MTSampler
 from datasource.reddit.download_daily_political_rd_sample import RD_Sampler
 from datasource.twitter.download_daily_political_sample import download_daily_political_sample
@@ -78,6 +77,29 @@ def validate_trees(downloaded_trees, platform):
     else:
         validated_trees = downloaded_trees
     return validated_trees
+
+
+def check_general_tree_requirements(delab_tree: DelabTree, verbose=False, platform=PLATFORM.REDDIT):
+    if delab_tree is not None:
+        tree_size = delab_tree.total_number_of_posts()
+        tree_depth = delab_tree.depth()
+        min_conversation_length = MIN_CONVERSATION_LENGTH
+        min_depth = MIN_CONVERSATION_DEPTH
+        max_conversation_length = MAX_CONVERSATION_LENGTH
+        if platform == PLATFORM.REDDIT:
+            max_conversation_length = MAX_CONVERSATION_LENGTH_REDDIT
+        if platform == PLATFORM.MASTODON:
+            min_conversation_length = MIN_CONVERSATION_LENGTH_MASTODON
+            min_depth = MIN_CONVERSATION_DEPTH_MASTODON
+        if min_conversation_length < tree_size < max_conversation_length and tree_depth >= min_depth:
+            if verbose:
+                logger.debug("found suitable conversation with length {} and depth {}".format(tree_size, tree_depth))
+            return True
+        return False
+    else:
+        if verbose:
+            logger.error("could not check tree requirements for NoneType")
+        return False
 
 
 def is_short_text(text):

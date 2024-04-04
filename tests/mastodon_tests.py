@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from connection_util import create_mastodon
 from models.language import LANGUAGE
 from models.platform import PLATFORM
-from socialmedia import download_conversations, download_daily_sample, download_daily_sample_conversations
+from socialmedia import download_conversations, download_daily_sample_conversations
 
 
 class DelabTreeConstructionTestCase(unittest.TestCase):

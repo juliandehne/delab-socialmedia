@@ -5,11 +5,9 @@ import pandas as pd
 from bs4 import BeautifulSoup
 from mastodon import MastodonNetworkError
 
-from DelabTreeDAO import check_general_tree_requirements
 from connection_util import create_mastodon
 from delab_trees.delab_tree import DelabTree
 from models.language import LANGUAGE
-from models.platform import PLATFORM
 
 logger = logging.getLogger(__name__)
 
@@ -169,8 +167,7 @@ def toots_to_tree(context, conversation_id):
     context_df = pd.DataFrame(tree_context)
     # context_df_clean = pre_process_df(context_df)
     tree = DelabTree(context_df)
-    if not check_general_tree_requirements(delab_tree=tree, platform=PLATFORM.MASTODON):
-        return None
+
     return tree
 
 

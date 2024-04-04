@@ -5,8 +5,6 @@ from copy import deepcopy
 from datetime import datetime
 from random import choice
 from time import sleep
-
-from DelabTreeDAO import check_general_tree_requirements
 from connection_util import get_praw
 from datasource.reddit.download_conversations_reddit import compute_reddit_tree
 from delab_trees.delab_tree import DelabTree
@@ -230,9 +228,8 @@ class RD_Sampler:
                 root = compute_reddit_tree(submission, self.language)
                 tree = DelabTree.from_recursive_tree(root)
                 # validate tree here so that there are not too many downloads necessary
-                useful = check_general_tree_requirements(tree)
                 valid = tree.validate(verbose=False)
-                if useful and valid:
+                if valid:
                     count += 1
                     result.append(tree)
                 if count > max_results:

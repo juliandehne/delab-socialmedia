@@ -62,7 +62,8 @@ def download_daily_sample_conversations(platform, min_results, language, connect
     try:
         # download_mturk_sample_helper = partial(download_mturk_samples, platform, min_results, language, persist)
         # execution_time = timeit.timeit(download_mturk_sample_helper, number=n_runs)
-        download_samples(platform, min_results, language, connector)
+        results = download_samples(platform, min_results, language, connector)
+        return results
         # average_time = (execution_time / 100) / 60
         # print("Execution time:", execution_time, "seconds")
         # print("Average Execution time:", average_time, "minutes")
