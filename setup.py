@@ -19,7 +19,7 @@ setup(
     description="a library to download reply trees in forums and social media",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/juliandehne/delab-trees",
+    url="https://github.com/juliandehne/delab-socialmedia",
     author="Julian Dehne",
     author_email="julian.dehne@gmail.com",
     license="MIT",
