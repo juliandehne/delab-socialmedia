@@ -57,6 +57,14 @@ def download_conversations(query_string="Politik",
 
 
 def download_daily_sample_conversations(platform, min_results, language, connector=None):
+    """
+    This is a proxy to download a sample of political conversations from the given platform for the current day
+    :param platform:
+    :param min_results:
+    :param language:
+    :param connector:
+    :return:
+    """
     # reset the list of subreddits to download
     if platform == PLATFORM.REDDIT:
         RD_Sampler.daily_en_subreddits = {}

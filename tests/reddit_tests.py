@@ -8,6 +8,7 @@ from connection_util import get_praw
 from models.language import LANGUAGE
 from models.platform import PLATFORM
 from socialmedia import download_conversations, download_daily_sample_conversations
+from datasource.reddit.download_user_conversations import get_user_conversations
 
 
 class DelabTreeConstructionTestCase(unittest.TestCase):
@@ -40,6 +41,11 @@ class DelabTreeConstructionTestCase(unittest.TestCase):
         conversations = download_daily_sample_conversations(platform=PLATFORM.REDDIT,
                                                             language=LANGUAGE.ENGLISH,
                                                             min_results=5)
+        assert len(conversations) > 0
+
+    def test_get_user_conversations(self):
+        assert self.reddit_secret is not None, "environment variable not set"
+        conversations = get_user_conversations("CalmAsTheSea")
         assert len(conversations) > 0
 
 

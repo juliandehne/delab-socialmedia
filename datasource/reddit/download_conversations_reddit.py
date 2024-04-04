@@ -89,7 +89,7 @@ def download_subreddit(reddit, sub_reddit_string, language=LANGUAGE.ENGLISH,
     return result
 
 
-def compute_reddit_tree(submission, language):
+def compute_reddit_tree(submission, language=None):
     comments = sort_comments_for_db(submission)
 
     # root node
