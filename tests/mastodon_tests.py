@@ -6,6 +6,7 @@ from connection_util import create_mastodon
 from models.language import LANGUAGE
 from models.platform import PLATFORM
 from socialmedia import download_conversations, download_daily_sample_conversations
+from datasource.mastodon.download_user_conversations import download_user_conversations
 
 
 class DelabTreeConstructionTestCase(unittest.TestCase):
@@ -40,6 +41,11 @@ class DelabTreeConstructionTestCase(unittest.TestCase):
         conversations = download_daily_sample_conversations(platform=PLATFORM.MASTODON,
                                                             language=LANGUAGE.ENGLISH,
                                                             min_results=5)
+        assert len(conversations) > 0
+
+    def test_get_user_conversations(self):
+        assert self.mst_client_id is not None, "environment variable not set"
+        conversations = download_user_conversations("@delab_goettingen", max_conversations=5)
         assert len(conversations) > 0
 
 

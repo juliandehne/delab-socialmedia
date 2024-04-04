@@ -6,8 +6,10 @@ from mastodon import MastodonServiceUnavailableError
 from daily_sampler import download_samples, check_general_tree_requirements
 from datasource.mastodon.download_conversations_mastodon import download_conversations_mstd
 from datasource.mastodon.download_daily_political_sample_mstd import MTSampler
+from datasource.mastodon.download_user_conversations import download_user_conversations
 from datasource.reddit.download_conversations_reddit import search_r_all
 from datasource.reddit.download_daily_political_rd_sample import RD_Sampler
+from datasource.reddit.download_user_conversations import get_user_conversations
 from datasource.twitter.download_conversations_twitter import download_conversations_tw
 from download_exceptions import NoDailySubredditAvailableException, NoDailyMTHashtagsAvailableException
 from models.language import LANGUAGE
@@ -94,3 +96,20 @@ def download_daily_sample_conversations(platform, min_results, language, connect
         logger.error("Mastodon seemed not to be available {}".format(mastodonerror))
     except mastodon.errors.MastodonNetworkError as mastodonerror:
         logger.error("Mastodon seemed not to be available {}".format(mastodonerror))
+
+
+def get_conversations_by_user(username, platform, connector):
+    """
+    Get all conversations a given user has participated in on a given platform
+    :param username: reddit username with u/ and mastodon user with @
+    :param platform: (reddit or mastodon)
+    :param connector: the praw object or the mastodon object
+    :return:
+    """
+    if platform == PLATFORM.REDDIT:
+        conversations = get_user_conversations(username, reddit=connector)
+    elif platform == PLATFORM.MASTODON:
+        conversations = download_user_conversations(username, mastodon=connector)
+    else:
+        raise NotImplementedError
+    return conversations

@@ -1,6 +1,25 @@
 # delab-socialmedia
 A python library to facilitate downloading conversation trees from social media platforms like Twitter, Reddit or Mastodon.
 
+## Overview
+
+This library provides a unified interface for downloading conversations from Twitter, Reddit, and Mastodon. It simplifies the process of querying and retrieving conversations based on specific criteria, such as language, query string, and the recency of conversations. The library is designed to work with connectors specific to each platform, such as `twarc` for Twitter, `praw` for Reddit, and the Mastodon API for Mastodon.
+
+## Features
+
+- Download conversations from Twitter, Reddit, and Mastodon using a unified interface.
+- Filter conversations by language, query string, and recency.
+- Download the conversations in a unified format DelabTree that allows CSS analysis for the conversation trees, but also exports as pandas dataframe or networkx graph
+- Validate and filter the downloaded conversations based on custom criteria.
+- Download a daily sample of political discussions for CSS research
+- NOTE: Twitter functions have not been tested since its demise
+
+## Installation
+
+```bash
+pip install delab-socialmedia
+```
+
 ## Getting Started
 
 Before you begin, make sure you have the necessary credentials:
@@ -109,8 +128,6 @@ class DelabTwarc(Twarc2):
 
 ## Download daily sample
 
-
-
 ```python
 from models.language import LANGUAGE
 from models.platform import PLATFORM
@@ -124,4 +141,46 @@ conversations = download_daily_sample_conversations(platform=PLATFORM.MASTODON,
                                                     connector=connector)
 ```
 
+
+### Download Conversations
+
+The library provides functions to download conversations based on various parameters. Here's an example of downloading conversations from Reddit:
+
+```python
+from socialmedia import download_conversations, PLATFORM, LANGUAGE
+from connection_util import get_praw
+
+connector = get_praw()
+conversations = download_conversations(query_string="Politics",
+                                       platform=PLATFORM.REDDIT,
+                                       language=LANGUAGE.ENGLISH,
+                                       recent=True,
+                                       max_conversations=30,
+                                       connector=connector)
+```
+
+
+
+### Get Conversations by User
+
+To get all conversations a given user has participated in on Reddit or Mastodon:
+
+```python
+from socialmedia import get_conversations_by_user, PLATFORM
+
+from connection_util import get_praw
+
+connector = get_praw()
+user_conversations = get_conversations_by_user(username="u/example_user",
+                                                platform=PLATFORM.REDDIT,
+                                                connector=connector)
+```
+
+## Contribution
+
+Contributions to improve the library are welcome. Please submit pull requests or open issues to suggest changes or report bugs.
+
+## License
+
+MIT
 
