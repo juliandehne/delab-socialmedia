@@ -3,8 +3,9 @@ import unittest
 from dotenv import load_dotenv
 
 from connection_util import create_mastodon
+from models.language import LANGUAGE
 from models.platform import PLATFORM
-from socialmedia import download_conversations
+from socialmedia import download_conversations, download_daily_sample, download_daily_sample_conversations
 
 
 class DelabTreeConstructionTestCase(unittest.TestCase):
@@ -19,10 +20,7 @@ class DelabTreeConstructionTestCase(unittest.TestCase):
         assert self.mst_access_token is not None
 
     def test_connection(self):
-        self.mastodon = create_mastodon(client_id=self.mst_client_id,
-                                        client_secret=self.mst_client_secret,
-                                        access_token=self.mst_access_token
-                                        )
+        self.mastodon = create_mastodon()
         # Fetch the public timeline
         public_posts = self.mastodon.timeline_public()
 
@@ -30,18 +28,19 @@ class DelabTreeConstructionTestCase(unittest.TestCase):
         assert public_posts
 
     def test_tree_download(self):
-        self.mastodon = create_mastodon(client_id=self.mst_client_id,
-                                        client_secret=self.mst_client_secret,
-                                        access_token=self.mst_access_token
-                                        )
-        conversations = download_conversations(self.mastodon, query_string="Trump", platform=PLATFORM.MASTODON)
+        assert self.mst_client_id is not None, "environment variable not set"
+        conversations = download_conversations(query_string="Trump", platform=PLATFORM.MASTODON)
         assert len(conversations) > 0
 
     def test_post_message(self):
         pass
 
     def test_download_daily(self):
-        pass
+        assert self.mst_client_id is not None, "environment variable not set"
+        conversations = download_daily_sample_conversations(platform=PLATFORM.MASTODON,
+                                                            language=LANGUAGE.ENGLISH,
+                                                            min_results=5)
+        assert len(conversations) > 0
 
 
 if __name__ == '__main__':

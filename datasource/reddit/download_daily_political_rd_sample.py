@@ -217,10 +217,11 @@ class RD_Sampler:
         self.language = language
         self.current_date = current_date
 
-    def download_daily_rd_sample(self, max_results):
+    def download_daily_rd_sample(self, max_results, connector):
         result = []
         try:
-            reddit = get_praw()
+            if connector is None:
+                reddit = get_praw()
 
             # could use .hot()
             count = 0

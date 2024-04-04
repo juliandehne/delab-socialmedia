@@ -1,13 +1,15 @@
 import logging
 
-from api_settings import MT_STUDY_DAILY_FLOWS_NEEDED
+import mastodon
+from mastodon import MastodonServiceUnavailableError
+
+from daily_sampler import download_samples
 from datasource.mastodon.download_conversations_mastodon import download_conversations_mstd
 from datasource.mastodon.download_daily_political_sample_mstd import MTSampler
 from datasource.reddit.download_conversations_reddit import search_r_all
 from datasource.reddit.download_daily_political_rd_sample import RD_Sampler
 from datasource.twitter.download_conversations_twitter import download_conversations_tw
-from datasource.twitter.download_daily_political_sample import download_daily_political_sample
-from delab_trees.delab_tree import DelabTree
+from download_exceptions import NoDailySubredditAvailableException, NoDailyMTHashtagsAvailableException
 from models.language import LANGUAGE
 from models.platform import PLATFORM
 
@@ -24,8 +26,8 @@ def download_conversations(query_string="Politik",
     """
     This is a proxy to download conversations from twitter, reddit respectively with the same interface
     :param connector: connector object, twarc for Twitter, praw for reddit and mastodon for Mastodon, see README for examples
-    :param query_string:
-    :param language:
+    :param query_string: the query string to be searched
+    :param language: reddit needs the language as default if language is not set in reddit response
     :param platform: twitter, mastodon or reddit currently
     :param recent: use recent version of apis, also prioritize recent events
     :param max_conversations: max number of conversations. Cuts of querying before checking tree requirements!
@@ -33,34 +35,47 @@ def download_conversations(query_string="Politik",
     """
 
     if platform == PLATFORM.TWITTER:
-        download_conversations_tw(connector, query_string=query_string,
-                                  language=language, platform=platform,
-                                  recent=recent)
+        return download_conversations_tw(connector,
+                                         query_string=query_string,
+                                         language=language,
+                                         platform=platform,
+                                         recent=recent)
     elif platform == PLATFORM.REDDIT:
-        search_r_all(query_string, max_conversations=max_conversations, recent=recent, language=language, reddit=connector)
+        return search_r_all(query_string,
+                            max_conversations=max_conversations,
+                            recent=recent,
+                            language=language,
+                            reddit=connector)
     elif platform == PLATFORM.MASTODON:
-        download_conversations_mstd(query=query_string, max_conversations=max_conversations, mastodon=connector)
+        return download_conversations_mstd(query=query_string, max_conversations=max_conversations, mastodon=connector)
 
 
-def download_daily_sample(topic_string,
-                          platform: PLATFORM,
-                          language=LANGUAGE.ENGLISH,
-                          max_results=MT_STUDY_DAILY_FLOWS_NEEDED) -> list[DelabTree]:
-    """
-
-    @param topic_string:
-    @param platform:
-    @param language:
-    @param max_results: the maximum number of suitable trees to be found for a given platform and a day
-    @return:
-    """
-    if platform == platform.TWITTER:
-        return download_daily_political_sample(language, topic_string=topic_string)
-    if platform == platform.REDDIT:
-        sampler = RD_Sampler(language)
-        return sampler.download_daily_rd_sample(max_results=max_results)
-    if platform == platform.MASTODON:
-        sampler = MTSampler(language=language)
-        return sampler.download_daily_political_sample_mstd(topic_string)
-    else:
-        raise NotImplementedError()
+def download_daily_sample_conversations(platform, min_results, language, connector=None):
+    # reset the list of subreddits to download
+    if platform == PLATFORM.REDDIT:
+        RD_Sampler.daily_en_subreddits = {}
+        RD_Sampler.daily_de_subreddits = {}
+    elif platform == PLATFORM.MASTODON:
+        MTSampler.daily_en_hashtags = {}
+        MTSampler.daily_de_hashtags = {}
+    # Perform 100 runs of the function and measure the time taken
+    try:
+        # download_mturk_sample_helper = partial(download_mturk_samples, platform, min_results, language, persist)
+        # execution_time = timeit.timeit(download_mturk_sample_helper, number=n_runs)
+        download_samples(platform, min_results, language, connector)
+        # average_time = (execution_time / 100) / 60
+        # print("Execution time:", execution_time, "seconds")
+        # print("Average Execution time:", average_time, "minutes")
+    except NoDailySubredditAvailableException as no_more_subreddits_to_try:
+        logger.debug("Tried all subreddits for language {}".format(no_more_subreddits_to_try.language))
+    except NoDailyMTHashtagsAvailableException as no_more_hashtags_to_try:
+        logger.debug("Tried all hashtags for language {}".format(no_more_hashtags_to_try.language))
+    except TimeoutError:
+        logger.debug("Downloading timeline took too long. Skipping hashtag {}")
+        return []
+    except MastodonServiceUnavailableError as mastodonerror:
+        logger.error("Mastodon seemed not to be available {}".format(mastodonerror))
+    except mastodon.errors.MastodonAPIError as mastodonerror:
+        logger.error("Mastodon seemed not to be available {}".format(mastodonerror))
+    except mastodon.errors.MastodonNetworkError as mastodonerror:
+        logger.error("Mastodon seemed not to be available {}".format(mastodonerror))

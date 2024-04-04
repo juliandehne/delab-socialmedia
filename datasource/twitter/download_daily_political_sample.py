@@ -13,7 +13,13 @@ from sample_political_keywords import topics, search_phrases
 logger = logging.getLogger(__name__)
 
 
-def download_daily_political_sample(language, topic_string) -> list[DelabTree]:
+def download_daily_political_sample(language, connector) -> list[DelabTree]:
+    """
+    TODO implement Twitter sampler
+    :param language:
+    :param connector:
+    :return:
+    """
     if language != LANGUAGE.ENGLISH:
         raise NotImplementedError()
     random_topic = choice(topics)
@@ -21,7 +27,7 @@ def download_daily_political_sample(language, topic_string) -> list[DelabTree]:
     random_phrase = choice(phrases)
     # query = construct_daily_query(random_phrase)
     query = random_phrase
-    downloaded_trees = download_twitter_sample(query=query)
+    downloaded_trees = download_twitter_sample(query=query, connector=connector)
     result = list(map(lambda x: DelabTree.from_recursive_tree(x), downloaded_trees))
     return result
 
@@ -40,8 +46,9 @@ def construct_daily_query(search_query):
     return search_query_with_dates
 
 
-def download_twitter_sample(query):
-    twarc = DelabTwarc()
+def download_twitter_sample(query, twarc):
+    if twarc is None:
+        twarc = DelabTwarc()
     # download the tweets that fulfill the query as candidates for whole conversation trees
     candidates, n_pages = download_conversation_representative_tweets(twarc, query, n_candidates=100)
     downloaded_tweets = 0

@@ -242,24 +242,16 @@ class MTSampler:
         self.language = language
         self.current_date = current_date
 
-    def download_daily_political_sample_mstd(self, topic_string, client_id=None,
-                                             client_secret=None,
-                                             access_token=None,
-                                             api_base_url="https://mastodon.social/",
-                                             use_yaml=False,
-                                             yaml_path=None):
+    def download_daily_political_sample_mstd(self, mastodon):
         hashtag = self.hashtag_string
         # toots in the last 24 hours
         today = datetime.now()
         yesterday = today - timedelta(days=1)
-        mastodon = create_mastodon(client_id,
-                                   client_secret,
-                                   access_token,
-                                   api_base_url,
-                                   use_yaml,
-                                   yaml_path)
-        # logger.debug("searching for conversations for hashtag {}".format(self.hashtag_string))
-        downloaded_trees = download_conversations_to_search(query=hashtag, mastodon=mastodon,
+        if mastodon is None:
+            mastodon = create_mastodon()
+
+        downloaded_trees = download_conversations_to_search(query=hashtag,
+                                                            mastodon=mastodon,
                                                             since=yesterday)
 
         logger.debug("returning {} conversations for hashtags {}, {} hashtags not searched for lang {}"
