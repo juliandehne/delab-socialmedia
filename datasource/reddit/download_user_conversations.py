@@ -7,7 +7,7 @@ from datasource.reddit.download_conversations_reddit import compute_reddit_tree
 from delab_trees.delab_tree import DelabTree
 
 
-def get_user_conversations(username, start_date=None, reddit=None):
+def get_user_conversations(username, start_date=None, max_conversations=1000, reddit=None):
     if reddit is None:
         reddit = get_praw()
 
@@ -20,13 +20,13 @@ def get_user_conversations(username, start_date=None, reddit=None):
     submissions = set()
     # Fetch submissions from the user's comments
     for comment in user.comments.new(limit=None):  # Adjust limit as necessary
-        if comment.created_utc >= start_date:
+        if comment.created_utc >= start_date and len(submissions) < max_conversations:
             submission = reddit.submission(id=comment.link_id.split('_')[1])
             submissions.add(submission)
 
         # Fetch submissions directly made by the user
     for submission in user.submissions.new(limit=None):  # Adjust limit as necessary
-        if submission.created_utc >= start_date:
+        if submission.created_utc >= start_date and len(submissions) < max_conversations:
             submissions.add(submission)
 
     trees = []

@@ -45,7 +45,8 @@ class DelabTreeConstructionTestCase(unittest.TestCase):
 
     def test_get_user_conversations(self):
         assert self.reddit_secret is not None, "environment variable not set"
-        conversations = get_user_conversations("CalmAsTheSea")
+        self.reddit_user = os.environ.get("reddit_user_name")
+        conversations = get_user_conversations(self.reddit_user)
         assert len(conversations) > 0
 
 

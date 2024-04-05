@@ -98,18 +98,20 @@ def download_daily_sample_conversations(platform, min_results, language, connect
         logger.error("Mastodon seemed not to be available {}".format(mastodonerror))
 
 
-def get_conversations_by_user(username, platform, connector):
+def get_conversations_by_user(username, platform, max_conversations=1000, connector=None):
     """
     Get all conversations a given user has participated in on a given platform
+    :param max_conversations: max number of conversations to download
     :param username: reddit username with u/ and mastodon user with @
     :param platform: (reddit or mastodon)
     :param connector: the praw object or the mastodon object
     :return:
     """
     if platform == PLATFORM.REDDIT:
-        conversations = get_user_conversations(username, reddit=connector)
+        conversations = get_user_conversations(username, max_conversations=max_conversations, reddit=connector)
     elif platform == PLATFORM.MASTODON:
-        conversations = download_user_conversations(username, mastodon=connector)
+        conversations = download_user_conversations(username, max_conversations=max_conversations, mastodon=connector)
     else:
         raise NotImplementedError
+    connector = None
     return conversations

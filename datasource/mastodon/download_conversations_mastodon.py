@@ -5,6 +5,7 @@ import pandas as pd
 from bs4 import BeautifulSoup
 from mastodon import MastodonNetworkError
 
+from api_settings import MST_TIMEOUT_SECONDS
 from connection_util import create_mastodon
 from delab_trees.delab_tree import DelabTree
 from models.language import LANGUAGE
@@ -64,7 +65,7 @@ def download_timeline(query, mastodon, since):
 
 
 def find_context(status, mastodon):
-    timeout_seconds = 20
+    timeout_seconds = MST_TIMEOUT_SECONDS
     signal.signal(signal.SIGALRM, timeout_handler)
     signal.alarm(timeout_seconds)
     context = {'root': status}
@@ -118,12 +119,14 @@ def get_root(context):
 
 
 def toots_to_tree(context, conversation_id):
+    conversation_id = str(conversation_id)
     root = context["root"]
     descendants = context["descendants"]
     ancestors = context["ancestors"]  # should be emtpy
     tree_context = []
     text = content_to_text(root["content"])
     lang = root['language']
+    tw_author__name = root['account'].get('display_name', root['account']["username"])
     if lang is None:
         lang = LANGUAGE.UNKNOWN
     tree_status = {'tree_id': conversation_id,
@@ -133,13 +136,16 @@ def toots_to_tree(context, conversation_id):
                    'created_at': root['created_at'],
                    'author_id': root['account']['id'],
                    'lang': lang,
-                   'url': root["url"]}
+                   'url': root["url"],
+                   'tw_author__name': tw_author__name}
     tree_context.append(tree_status)
     for ancestor in ancestors:
         lang = ancestor['lang']
         if lang is None:
             lang = LANGUAGE.UNKNOWN
         text = content_to_text(ancestor["content"])
+        tw_author__name = ancestor['account'].get('display_name',
+                                                 ancestor['account']["username"])  # Get the author's name
         tree_status = {'tree_id': conversation_id,
                        'post_id': str(ancestor['id']),
                        'parent_id': str(ancestor['in_reply_to_id']),
@@ -147,12 +153,15 @@ def toots_to_tree(context, conversation_id):
                        'created_at': ancestor['created_at'],
                        'author_id': ancestor['account']['id'],
                        'lang': lang,
-                       'url': ancestor["url"]}
+                       'url': ancestor["url"],
+                       'tw_author__name': tw_author__name}
         tree_context.append(tree_status)
     for descendant in descendants:
         lang = descendant['language']
         if lang is None:
             lang = LANGUAGE.UNKNOWN
+        tw_author__name = descendant['account'].get('display_name',
+                                                   descendant['account']["username"])  # Get the author's name
         text = content_to_text(descendant["content"])
         tree_status = {'tree_id': conversation_id,
                        'post_id': str(descendant['id']),
@@ -161,7 +170,8 @@ def toots_to_tree(context, conversation_id):
                        'created_at': descendant['created_at'],
                        'author_id': descendant['account']['id'],
                        'lang': lang,
-                       'url': descendant["url"]}
+                       'url': descendant["url"],
+                       'tw_author__name': tw_author__name}
         tree_context.append(tree_status)
 
     context_df = pd.DataFrame(tree_context)

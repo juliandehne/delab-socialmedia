@@ -1,1 +1,7 @@
 /.env
+/build/
+/dist/
+*.gz
+*.whl
+*.egg-info
+*.csv

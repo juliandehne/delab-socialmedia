@@ -45,7 +45,8 @@ class DelabTreeConstructionTestCase(unittest.TestCase):
 
     def test_get_user_conversations(self):
         assert self.mst_client_id is not None, "environment variable not set"
-        conversations = download_user_conversations("@delab_goettingen", max_conversations=5)
+        self.mst_user = os.environ.get("mst_username")
+        conversations = download_user_conversations(self.mst_user, max_conversations=5)
         assert len(conversations) > 0
 
 

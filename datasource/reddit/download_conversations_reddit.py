@@ -94,8 +94,8 @@ def compute_reddit_tree(submission, language=None):
 
     # root node
     author_id, author_name = compute_author_id(submission)
-    tree_id = convert_to_hash(submission.fullname)
-    root_node_id = convert_to_hash(submission.fullname)
+    tree_id = str(convert_to_hash(submission.fullname))
+    root_node_id = str(convert_to_hash(submission.fullname))
     if hasattr(submission, 'lang'):
         submission_lang = submission.lang
     else:
@@ -116,9 +116,9 @@ def compute_reddit_tree(submission, language=None):
 
     for comment in comments:
         # node_id = comment.id
-        node_id = convert_to_hash(comment.fullname)
+        node_id = str(convert_to_hash(comment.fullname))
         # parent_id = comment.parent_id.split("_")[1]
-        parent_id = convert_to_hash(comment.parent_id)
+        parent_id = str(convert_to_hash(comment.parent_id))
         comment_author_id, comment_author_name = compute_author_id(comment)
         if hasattr(comment, 'lang'):
             comment_lang = comment.lang
