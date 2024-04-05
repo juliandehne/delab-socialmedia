@@ -122,16 +122,20 @@ def toots_to_tree(context, conversation_id):
     conversation_id = str(conversation_id)
     root = context["root"]
     descendants = context["descendants"]
-    ancestors = context["ancestors"]  # should be emtpy
+    ancestors = context["ancestors"]  # should be empty
     tree_context = []
+
+    # List to keep track of valid post IDs in the conversation
+    valid_post_ids = [str(root['id'])]
+
+    # Process root post
     text = content_to_text(root["content"])
-    lang = root['language']
+    lang = root.get('language', LANGUAGE.UNKNOWN)
     tw_author__name = root['account'].get('display_name', root['account']["username"])
-    if lang is None:
-        lang = LANGUAGE.UNKNOWN
+
     tree_status = {'tree_id': conversation_id,
                    'post_id': str(root['id']),
-                   'parent_id': str(root['in_reply_to_id']),
+                   'parent_id': str(root.get('in_reply_to_id', '')),
                    'text': text,
                    'created_at': root['created_at'],
                    'author_id': root['account']['id'],
@@ -139,40 +143,33 @@ def toots_to_tree(context, conversation_id):
                    'url': root["url"],
                    'tw_author__name': tw_author__name}
     tree_context.append(tree_status)
-    for ancestor in ancestors:
-        lang = ancestor['lang']
-        if lang is None:
-            lang = LANGUAGE.UNKNOWN
-        text = content_to_text(ancestor["content"])
-        tw_author__name = ancestor['account'].get('display_name',
-                                                 ancestor['account']["username"])  # Get the author's name
-        tree_status = {'tree_id': conversation_id,
-                       'post_id': str(ancestor['id']),
-                       'parent_id': str(ancestor['in_reply_to_id']),
-                       'text': text,
-                       'created_at': ancestor['created_at'],
-                       'author_id': ancestor['account']['id'],
-                       'lang': lang,
-                       'url': ancestor["url"],
-                       'tw_author__name': tw_author__name}
-        tree_context.append(tree_status)
-    for descendant in descendants:
-        lang = descendant['language']
-        if lang is None:
-            lang = LANGUAGE.UNKNOWN
-        tw_author__name = descendant['account'].get('display_name',
-                                                   descendant['account']["username"])  # Get the author's name
-        text = content_to_text(descendant["content"])
-        tree_status = {'tree_id': conversation_id,
-                       'post_id': str(descendant['id']),
-                       'parent_id': str(descendant['in_reply_to_id']),
-                       'text': text,
-                       'created_at': descendant['created_at'],
-                       'author_id': descendant['account']['id'],
-                       'lang': lang,
-                       'url': descendant["url"],
-                       'tw_author__name': tw_author__name}
-        tree_context.append(tree_status)
+
+    # Function to process individual posts (ancestors or descendants)
+    def process_post(post):
+        lang = post.get('language', LANGUAGE.UNKNOWN)
+        tw_author__name = post['account'].get('display_name', post['account']["username"])
+        text = content_to_text(post["content"])
+        parent_id_str = str(post.get('in_reply_to_id', ''))
+
+        return {'tree_id': conversation_id,
+                'post_id': str(post['id']),
+                'parent_id': parent_id_str,
+                'text': text,
+                'created_at': post['created_at'],
+                'author_id': post['account']['id'],
+                'lang': lang,
+                'url': post["url"],
+                'tw_author__name': tw_author__name}
+
+    # Process ancestors and descendants
+    post_list = sorted(ancestors + descendants, key=lambda x: x['created_at'])
+
+    for post in post_list:
+        if str(post.get('in_reply_to_id')) in valid_post_ids:
+            post_status = process_post(post)
+            tree_context.append(post_status)
+            # Add the post ID to the list of valid IDs, as it's now part of the conversation chain
+            valid_post_ids.append(str(post['id']))
 
     context_df = pd.DataFrame(tree_context)
     # context_df_clean = pre_process_df(context_df)
