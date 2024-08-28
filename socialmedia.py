@@ -10,6 +10,7 @@ from datasource.mastodon.download_user_conversations import download_user_conver
 from datasource.reddit.download_conversations_reddit import search_r_all
 from datasource.reddit.download_daily_political_rd_sample import RD_Sampler
 from datasource.reddit.download_user_conversations import get_user_conversations
+from datasource.reddit.get_conversations_by_url import get_conversations_by_url
 from datasource.twitter.download_conversations_twitter import download_conversations_tw
 from download_exceptions import NoDailySubredditAvailableException, NoDailyMTHashtagsAvailableException
 from models.language import LANGUAGE
@@ -115,3 +116,10 @@ def get_conversations_by_user(username, platform, max_conversations=1000, connec
         raise NotImplementedError
     connector = None
     return conversations
+
+
+def get_conversations_by_conversation_url(conversation_url, platform, connector=None):
+    if platform == PLATFORM.REDDIT:
+        return get_conversations_by_url(conversation_url)
+    else:
+        raise NotImplementedError

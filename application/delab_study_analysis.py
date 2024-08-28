@@ -1,3 +1,4 @@
+import csv
 import os
 
 import pandas as pd
@@ -13,7 +14,8 @@ print(reddit_user)
 
 # %%
 
-df = pd.read_csv("delab_study2.csv")
+# df = pd.read_csv("delab_study2_reddit.csv", quoting=csv.QUOTE_ALL)
+df = pd.read_pickle("delab_study2_reddit.pkl")
 
 df_calms = df[df["tw_author__name"] == reddit_user]
 print(df_calms.shape)
@@ -29,7 +31,6 @@ flow_lists = []
 for tree_id, tree in manager.trees.items():
     flows = tree.get_conversation_flows()
     flow_lists.append(list(flows[0].values()))
-
 # %%
 # Flatten the list of lists into a single list
 flat_list = [item for sublist in flow_lists for item in sublist]
